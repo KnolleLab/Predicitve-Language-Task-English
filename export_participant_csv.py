@@ -344,9 +344,8 @@ def build_stimuli_map(
                     if not stem:
                         continue
 
-                    key = stem[8:] if len(stem) > 8 else stem
-                    if key not in key_to_row:
-                        key_to_row[key] = row_data
+                    if stem not in key_to_row:
+                        key_to_row[stem] = row_data
                     key_to_stim_file[stem] = stim_path.name
         except Exception:
             continue
