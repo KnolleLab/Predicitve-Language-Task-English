@@ -289,6 +289,27 @@ def load_trials(data_file: Path) -> Optional[List[Dict[str, Any]]]:
         return [item for item in data if isinstance(item, dict)]
     return None
 
+def extract_assigned_id(study_dir: Path) -> Optional[str]:
+    data_files = list(study_dir.glob("comp-result_*/data.txt"))
+    if not data_files:
+        print(f"[WARN] No data.txt files found in {study_dir}")
+        return None
+    for data_file in data_files:
+        try:
+            raw = read_text_file(data_file)
+            if not raw:
+                continue
+            reader = csv.DictReader(raw.splitlines())
+            for row in reader:
+                assigned_id = row.get("assigned_id")
+                if assigned_id:
+                    assigned_id = assigned_id.strip()
+                    print(f"[DEBUG] Using assigned_id '{assigned_id}' from {data_file}")
+                    return assigned_id
+        except Exception as e:
+            print(f"[ERROR] Failed reading {data_file}: {e}")
+    print(f"[ERROR] No assigned_id found in any data.txt under {study_dir}")
+    return None
 
 def normalize_audio_stem(value: Any) -> Optional[str]:
     if not isinstance(value, str):
@@ -498,6 +519,7 @@ def process_participant(
     data_file = select_best_data_file(study_dir)
     if not data_file:
         return None
+    participant_id = extract_assigned_id(study_dir)
 
     trials = load_trials(data_file)
     if not trials:
@@ -532,6 +554,7 @@ def process_participant(
             out.update(stim_row)
 
         out.update({
+            "participant_id": participant_id,
             "sentence_index": bundle_index,
             "file_name": file_name,
             "round_index": bundle.get("round_index"),
