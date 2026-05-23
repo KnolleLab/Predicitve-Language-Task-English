@@ -323,8 +323,11 @@ def normalize_audio_stem(value: Any) -> Optional[str]:
     return Path(name).stem
 
 
-def build_stimuli_map(stim_paths: List[Path], word_stimulus_column: str) -> Dict[str, Dict[str, Any]]:
+def build_stimuli_map(
+        stim_paths: List[Path], word_stimulus_column: str
+) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, str]]:
     key_to_row: Dict[str, Dict[str, Any]] = {}
+    key_to_stim_file: Dict[str, str] = {}
 
     for stim_path in stim_paths:
         if not stim_path.exists() or not stim_path.is_file():
@@ -344,10 +347,11 @@ def build_stimuli_map(stim_paths: List[Path], word_stimulus_column: str) -> Dict
                     key = stem[8:] if len(stem) > 8 else stem
                     if key not in key_to_row:
                         key_to_row[key] = row_data
+                    key_to_stim_file[stem] = stim_path.name
         except Exception:
             continue
 
-    return key_to_row
+    return key_to_row, key_to_stim_file
 
 
 def select_best_data_file(study_dir: Path) -> Optional[Path]:
@@ -530,7 +534,7 @@ def process_participant(
     stt_language_hint = (config.language or selected_language or None)
     word_stimulus_column = get_word_stimulus_column(assets_text_dir, selected_language)
     stim_paths = gather_stimulus_paths(workspace_root, selected_randomisation, assets_text_dir)
-    key_to_row = build_stimuli_map(stim_paths, word_stimulus_column)
+    key_to_row, key_to_stim_file = build_stimuli_map(stim_paths, word_stimulus_column)
     files_dir = resolve_files_dir_from_data_file(data_file)
     decode_cache_dir = config.cache_dir / "decoded_audio"
     stt_cache: Dict[str, TranscriptionResult] = {}
@@ -557,6 +561,7 @@ def process_participant(
             "participant_id": participant_id,
             "sentence_index": bundle_index,
             "file_name": file_name,
+            "randomisation": key_to_stim_file.get(response_key),
             "round_index": bundle.get("round_index"),
             "clarity_rating": bundle.get("clarity_rating"),
             "confidence_rating": bundle.get("confidence_rating"),
