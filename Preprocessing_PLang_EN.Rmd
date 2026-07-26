@@ -1,0 +1,164 @@
+---
+title: "preprocessing_PLang_EN"
+author: "Polina Yarko"
+date: "2026-04-28"
+output: html_document
+---
+```{r setup}
+library(jsonlite)
+library(dplyr)
+library(stringr)
+library(readr)
+library(purrr)
+library (stringdist)
+library(here)
+library(readxl)
+```
+
+```{r restructure study result file}
+# ---------------------------- 
+# 1. find & merge study result files from all participants
+# ---------------------------- 
+# get the study_result_... csv-files
+study_files <- list.files( 
+  here("demo_results", "participant_exports"), 
+  pattern = "^study_result_.*\\.csv$", 
+  full.names = TRUE 
+) 
+#merge study results from all participants
+all_data <- purrr::map_dfr(study_files, function(file) { 
+read.csv(file) %>% 
+  mutate( 
+    recording_key = stringr::str_remove(file_name, "^response_") %>%
+                      stringr::str_remove("\\.txt$"), 
+    study_file = basename(file) 
+  ) 
+}) 
+
+# ---------------------------- 
+# 2. restructure document 
+# ---------------------------- 
+final_data <- all_data %>%
+  relocate(Sentence, Answer, .before = mic_input_text) %>%
+  relocate(cloze, .after = mic_input_text) %>%
+  relocate(study_file, .after = participant_id) %>%
+  select(participant_id, study_file, sentence_index, everything())
+final_data <- final_data %>%
+  select(-round_index, -file_name)
+```
+
+```{r preprocess answers}
+# sample strings
+final_data$mic_input_text<- tolower(final_data$mic_input_text)
+final_data$mic_input_text<- str_remove_all(final_data$mic_input_text, "[[:punct:]]")
+
+string_vec1<- final_data$Answer
+string_vec2<- final_data$mic_input_text
+```
+
+```{r numbers to NA & extract last word in case of repetition}
+final_data <- final_data %>%
+  mutate(
+    mic_input_text_clean = case_when(
+      str_detect(mic_input_text, "nothing") ~ "nothing",
+      str_detect(mic_input_text, "\\d") ~ NA_character_,
+      TRUE ~ { mic_input_text %>%
+        str_remove_all("\\bthe\\b|\\ba\\b|\\band\\b") %>%
+        str_squish() %>%
+        sapply(function(x) {
+          words <- str_split(x, " ")[[1]]
+          dupes <- words[duplicated(words)]
+          if (length(dupes) == 0) x else unique(dupes) %>% str_c(collapse = " ")
+        }, USE.NAMES = FALSE) 
+      }
+    )
+  )
+final_data <- final_data %>%
+  dplyr::relocate(mic_input_text_clean, .after = mic_input_text)
+```
+
+```{r see if there is more than 1 word & replace with NA}
+final_data$multiple_words <- ifelse(
+  stringr::str_count(
+    stringr::str_trim(final_data$mic_input_text_clean),
+    "\\S+"
+  ) > 1,
+  1,
+  0
+)
+final_data <- final_data %>%
+  dplyr::relocate(multiple_words, .after = mic_input_text_clean)
+#replace multiple strings with NA
+final_data <- final_data %>%
+  mutate(
+    mic_input_text_clean = if_else(
+      multiple_words == 1,
+      NA_character_,
+      mic_input_text_clean
+    )
+  )
+```
+
+```{r Levenshtein distance}
+final_data$levenshtein <- stringdist(string_vec1, string_vec2, method = 'lv')
+final_data$optimal_string_alignment<- stringdist(string_vec1, string_vec2, method = 'osa') # almost no difference to lv
+final_data$damerau_levenshtein<- stringdist(string_vec1, string_vec2, method = 'dl') # almost no difference to lv
+final_data$longest_common_string<- stringdist(string_vec1, string_vec2, method = 'lcs')
+final_data$jaro_winkler<- stringdist(string_vec1, string_vec2, method='jw', p=0.1)
+final_data$soundex<- stringdist(string_vec1, string_vec2, method = 'soundex')
+
+final_data <- final_data %>%
+  relocate(
+    levenshtein,
+    optimal_string_alignment,
+    damerau_levenshtein,
+    longest_common_string,
+    jaro_winkler,
+    soundex,
+    .after = multiple_words
+  )
+```
+
+```{r word_noword_levenshtein column}
+final_data <- final_data %>%
+  mutate(
+    word_noword_levenshtein = case_when(
+      str_detect(mic_input_text_clean, "nothing") ~ "noword",
+      #str_detect(mic_input_text, "\\s+") ~ "noword",  # <- more than one word
+      levenshtein <= 1 ~ "correctword",
+      levenshtein >= 2 ~ "word",
+      TRUE ~ NA_character_
+    )
+  )
+
+final_data <- final_data %>%
+  relocate(word_noword_levenshtein, .after = multiple_words)
+
+```
+
+```{r word_noword_jw column}
+final_data <- final_data %>%
+  mutate(
+    word_noword_jw = case_when(
+      str_detect(mic_input_text_clean, "nothing") ~ "noword",
+      #str_detect(mic_input_text, "\\s+") ~ "noword",  # <- more than one word
+      jaro_winkler <= 0.2 ~ "correctword",
+     TRUE ~ "word"
+    )
+  )
+
+final_data <- final_data %>%
+  relocate(word_noword_jw, .after = (word_noword_levenshtein))
+```
+
+```{r add SPQ values}
+# load SPQ data
+df_spq <- read_excel("spq_data.xlsx")
+
+# merge with final_data
+final_data <- left_join(final_data, df_spq, by = "participant_id")
+```
+
+```{r save as csv}
+write.csv(final_data, "final_data_061826.csv", row.names = FALSE)
+```
