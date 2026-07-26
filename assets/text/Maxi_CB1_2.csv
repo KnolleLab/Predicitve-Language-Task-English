@@ -1,4 +1,4 @@
-Sentence Number,condition,Comments,Sentence,Besonderheit,Answer,WordPrediction,wn,nwords,nprt,nw,sn,cloze,entropy,prior_recording,tw_recording
+Sentence Number,condition,Comments,Sentence,Besonderheit,Answer,WordPrediction,wn,nwords,nprt,nw,sn,cloze,entropy,recording_prior,recording_tw
 _610,el,,The waitress wiped the table with a damp,,cloth,80,1,4,105,9,1601,0.7619047619047619,0.6284508478691331,e_el_610p.wav,e_el_610tw_3.wav
 _587,el,rerecorded,The thief ran away after taking the woman's,,purse,95,1,7,104,9,1550,0.9134615384615384,0.4395790152069918,e_el_587p.wav,e_el_587tw_3.wav
 _186,el,,He was down twenty dollars after losing the,,bet,95,1,6,103,9,468,0.9223300970873787,0.3890936879463775,e_el_186p.wav,e_el_186tw_3.wav

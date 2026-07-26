@@ -1,4 +1,4 @@
-Sentence Number,condition,Comments,Sentence,Besonderheit,Answer,WordPrediction,wn,nwords,nprt,nw,sn,cloze,entropy,prior_recording,tw_recording
+Sentence Number,condition,Comments,Sentence,Besonderheit,Answer,WordPrediction,wn,nwords,nprt,nw,sn,cloze,entropy,recording_prior,recording_tw
 _486,el,,The house on the hill seemed haunted by a,,ghost,86,1,6,104,10,1275,0.8269230769230769,0.6270399040844348,e_el_486p.wav,e_el_486tw_3.wav
 _396,el,,The chef sprayed the cooking spray onto the,,pan,96,1,7,103,9,1068,0.9320388349514563,0.3671200489866049,e_el_396p.wav,e_el_396tw_3.wav
 _575,el,,The storewide clearance event attracted a huge,,crowd,97,1,7,104,8,1523,0.9326923076923077,0.3642634061034108,e_el_575p.wav,e_el_575tw_3.wav
