@@ -17,12 +17,9 @@ If you just want to run and deploy the experiment:
 
 ## Which experiment files to use
 
-Use one of these module entrypoints directly:
+Use this module entrypoints directly:
 
-- `src/experiment-de.ts`
-- `src/experiment-de-prior.ts`
 - `src/experiment-en.ts`
-- `src/experiment-en-prior.ts`
 
 `src/experiment.ts` is the shared base implementation and should not be used directly as a study module.
 
