@@ -29,8 +29,6 @@ The module files above enforce these settings in code:
 
 | Module | Language | Prior question |
 | --- | --- | --- |
-| `experiment-de.ts` | `de` | `false` |
-| `experiment-de-prior.ts` | `de` | `true` |
 | `experiment-en.ts` | `en` | `false` |
 | `experiment-en-prior.ts` | `en` | `true` |
 
