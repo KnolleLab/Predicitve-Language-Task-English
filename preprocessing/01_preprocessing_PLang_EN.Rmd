@@ -1,0 +1,207 @@
+---
+title: "Preprocessing"
+author: "Polina Yarko"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: html_document
+---
+#Initial Preprocessing
+This script performs the initial preprocessing by merging all participant-level CSV files into a single dataset, cleans the transcribed responses, calculating several string distance measures, and classifying the responses based on those string distances. SPQ scores are also added to the dataset.
+```{r setup}
+library(jsonlite)
+library(dplyr)
+library(stringr)
+library(readr)
+library(purrr)
+library (stringdist)
+library(here) #this R-Script should be in your preprocessing folder
+library(readxl)
+```
+
+## Load and merge participant-level CSV files 
+
+```{r restructure study result file}
+# ---------------------------- 
+# 1. find & merge study result files from all participants
+# ---------------------------- 
+# get the study_result_... csv-files
+study_files <- list.files( 
+  here("demo_results", "participant_exports"), 
+  pattern = "^study_result_.*\\.csv$", 
+  full.names = TRUE 
+) 
+#merge study results from all participants
+all_data <- purrr::map_dfr(study_files, function(file) { 
+read.csv(file) %>% 
+  mutate( 
+    recording_key = stringr::str_remove(file_name, "^response_") %>%
+                    stringr::str_remove("\\.txt$"), 
+    study_file = basename(file) 
+  ) 
+}) 
+
+# ---------------------------- 
+# 2. restructure document 
+# ---------------------------- 
+final_data <- all_data %>%
+  relocate(Sentence, Answer, .before = mic_input_text) %>%
+  relocate(cloze, .after = mic_input_text) %>%
+  relocate(study_file, .after = participant_id) %>%
+  select(participant_id, study_file, sentence_index, everything())
+final_data <- final_data %>%
+  select(-round_index, -file_name)
+```
+
+## Preprocess transcribed responses
+### Clean and standardize transcribed responses
+
+The transcribed responses are converted to lowercase and and punctuation is removed to standardize responses for string distance calculations.
+The original transcriptions are preserved in a separate column before preprocessing. 
+
+```{r convert to lowercase & remove punctuation}
+# duplicate transcribed responses column
+final_data$mic_input_text_raw <- final_data$mic_input_text
+final_data <- final_data %>% relocate(mic_input_text_raw, .after = Sentence)
+
+# convert to lowercase
+final_data$mic_input_text<- tolower(final_data$mic_input_text)
+# remove puctuation
+final_data$mic_input_text<- str_remove_all(final_data$mic_input_text, "[[:punct:]]") 
+
+# create vectors for string distance
+string_vec1<- final_data$Answer
+string_vec2<- final_data$mic_input_text
+```
+
+Responses containing "nothing" are retained as valid responses. 
+Responses containing numbers are excluded. 
+For the remaining responses, common function words are removed and repeated-word responses are reduced to the repeated word. 
+
+```{r convert numbers to NA & extract last word in case of repetition}
+final_data <- final_data %>%
+  mutate(
+    mic_input_text_clean = case_when(
+      str_detect(mic_input_text, "nothing") ~ "nothing",
+      str_detect(mic_input_text, "\\d") ~ NA_character_,
+      TRUE ~ { mic_input_text %>%
+        str_remove_all("\\bthe\\b|\\ba\\b|\\band\\b") %>%
+        str_squish() %>%
+        sapply(function(x) {
+          words <- str_split(x, " ")[[1]]
+          dupes <- words[duplicated(words)]
+          if (length(dupes) == 0) x else unique(dupes) %>% str_c(collapse = " ")
+        }, USE.NAMES = FALSE) 
+      }
+    )
+  )
+final_data <- final_data %>%
+  dplyr::relocate(mic_input_text_clean, .after = mic_input_text)
+```
+
+Responses that still contain more than one word are excluded from further analysis.
+
+```{r clean multiple-word responses}
+# check if there is more than 1 word
+final_data$multiple_words <- ifelse(
+  stringr::str_count(
+    stringr::str_trim(final_data$mic_input_text_clean),
+    "\\S+"
+  ) > 1,
+  1,
+  0
+)
+final_data <- final_data %>%
+  dplyr::relocate(multiple_words, .after = mic_input_text_clean)
+# replace multiple strings with NA
+final_data <- final_data %>%
+  mutate(
+    mic_input_text_clean = if_else(
+      multiple_words == 1,
+      NA_character_,
+      mic_input_text_clean
+    )
+  )
+```
+
+### Compute string distances
+
+Different string distance measures are calculated to determine which measure best assesses the similarity between the target word and the transcribed response for each sentence.
+
+```{r compute string distances}
+final_data$levenshtein <- stringdist(string_vec1, string_vec2, method = 'lv')
+final_data$optimal_string_alignment<- stringdist(string_vec1, string_vec2, method = 'osa')
+final_data$damerau_levenshtein<- stringdist(string_vec1, string_vec2, method = 'dl') 
+final_data$longest_common_string<- stringdist(string_vec1, string_vec2, method = 'lcs')
+final_data$jaro_winkler<- stringdist(string_vec1, string_vec2, method='jw', p=0.1)
+final_data$soundex<- stringdist(string_vec1, string_vec2, method = 'soundex')
+
+final_data <- final_data %>%
+  relocate(
+    levenshtein,
+    optimal_string_alignment,
+    damerau_levenshtein,
+    longest_common_string,
+    jaro_winkler,
+    soundex,
+    .after = multiple_words
+  )
+```
+
+Levenshtein distance and Jaro-Winkler distance showed the best fit for classifying the transcribed responses. 
+
+The classification for the Levenshtein distance was defined as follows:
+- noword: responses containing "nothing"
+- correctword: Levenshtein distance ≤ 1
+- word: Levenshtein distance ≥ 2
+
+```{r word_noword_levenshtein column}
+final_data <- final_data %>%
+  mutate(
+    word_noword_levenshtein = case_when(
+      str_detect(mic_input_text_clean, "nothing") ~ "noword",
+      levenshtein <= 1 ~ "correctword",
+      levenshtein >= 2 ~ "word",
+      TRUE ~ NA_character_
+    )
+  )
+
+final_data <- final_data %>%
+  relocate(word_noword_levenshtein, .after = multiple_words)
+```
+
+The classification for the Jaro-Winkler distance was defined as follows:
+- noword: responses containing "nothing"
+- correctword: Jaro-Winkler distance ≤ 0.2
+- word: Jaro-Winkler distance > 0.2
+
+The Jaro-Winkler distance values were used for subsequent analyses.
+```{r word_noword_jw column}
+final_data <- final_data %>%
+  mutate(
+    word_noword_jw = case_when(
+      str_detect(mic_input_text_clean, "nothing") ~ "noword",
+      jaro_winkler <= 0.2 ~ "correctword",
+     TRUE ~ "word"
+    )
+  )
+
+final_data <- final_data %>%
+  relocate(word_noword_jw, .after = (word_noword_levenshtein))
+```
+
+## Add SPQ scores
+
+SPQ scores are added to the dataset for subsequent analysis.
+
+```{r add SPQ scores}
+# load SPQ data
+df_spq <- read_excel("spq_data.xlsx")
+
+# merge with final_data
+final_data <- left_join(final_data, df_spq, by = "participant_id")
+```
+
+## Save dataset as CSV
+
+```{r save as csv}
+write.csv(final_data, paste0("final_data_", format(Sys.Date(), "%m%d%y"), ".csv"), row.names = FALSE)
+```
