@@ -50,7 +50,7 @@ final_data <- final_data %>%
 ```
 
 ## Preprocess transcribed responses
-
+### Clean and standardize transcribed responses
 The transcribed responses are converted to lowercase and and punctuation is removed to standardize responses for string distance calculations.
 The original transcriptions are preserved in a separate column before preprocessing. 
 
