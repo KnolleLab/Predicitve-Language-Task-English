@@ -2,7 +2,7 @@
 
 ## About
 
-This project implements an English-language version of the [original German predictive language task](https://github.com/doorapr/IDP.git) investigating how semantic context influences the perception of degraded speech. The task is implemented in [jsPsych](https://www.jspsych.org/) for browser-based behavioral experiments and is packaged for JATOS via `jspsych-builder`. Data analysis and computational modelling are performed in [R](https://www.r-project.org). 
+This project implements an **English-language version** of the [original German predictive language task](https://github.com/doorapr/IDP.git) investigating how semantic context influences the perception of degraded speech. The task is implemented in [jsPsych](https://www.jspsych.org/) for browser-based behavioral experiments and is packaged for JATOS via `jspsych-builder`. Data analysis and computational modelling are performed in [R](https://www.r-project.org). 
 
 # Experiment setup and deployment
 ## Quick start (non-technical)
@@ -97,7 +97,7 @@ npm run jatos experiment-en-prior
 
 ## Additional HTML modules/assets
 
-The experiment entrypoints include `html` in their `@assets` list. The `html/` directory contains the HTML components required by the English version of the experiment (i.e., clinical questionnaires and administrative components). `html/` must be present when building the `.jzip` file for JATOS. If `html/` does not exist, `jspsych` build/run commands for these module entrypoints fail. Additional HTML files can be added to this directory and then used as separate HTML components in JATOS.    
+The experiment entrypoints include `html` in their `@assets` list. The `html/` directory contains the HTML components required by the **English-language version** of the experiment (i.e., clinical questionnaires and administrative components). `html/` must be present when building the `.jzip` file for JATOS. If `html/` does not exist, `jspsych` build/run commands for these module entrypoints fail. Additional HTML files can be added to this directory and then used as separate HTML components in JATOS.    
 # Data Preprocessing and Analysis
 ## Participant CSV export
 
@@ -121,10 +121,32 @@ Transcription is required for preprocessing, as the subsequent preprocessing ste
 
 For full options and output details, see `EXPORT_PARTICIPANT_CSV.md`.
 ## SPQ data export
-Run `spq_json_to_excel.py` to extract the Schizotypal Personality Questionnaire (SPQ) values from the JATOS results and save them as an Excel file for later merging with the participant data.
+Run `spq_json_to_excel.py` to extract the Schizotypal Personality Questionnaire (SPQ) values from the JATOS results and save them as `spq_data.xlsl` for later merging with the participant data.
 ```sh
 python preprocessing/spq_json_to_excel.py 
 ```
+`spq_data.xlsl` will be saved in the `preprocessing/` folder.
+## Preprocess exported data 
+Use `preprocessing/Preprocessing_PLang_EN.Rmd` to merge and clean participant-level experiment data.
+
+**The script**:
+- merges all participant CSV files into a single dataset;
+- cleans and standardizes transcribed responses;
+- calculates several **string distance measures** to assess the similarity between target words and transcribed responses;
+- classifies transcribed responses as 'word', 'correctword', or 'noword' based on **Levenshtein** and **Jaro-Winkler** distance cutoffs;
+- adds participant SPQ scores; and 
+- saves the resulting preprocessed dataset as a dated CSV file.
+
+### Input
+The script expects:
+- CSV files per participant in `demo_results/participant_exports/`;
+- `spq_data.xlsl` in the `preprocessing/` folder.
+### Running the preprocessing
+Open `preprocessing/Preprocessing_PLang_EN.Rmd` in [RStudio](https://rstudio-education.github.io/hopr/starting.html) and run the script.
+The resulting dataset will be saved as `final_data_MMDDYY.csv`.
+
+
+
 
 
 
