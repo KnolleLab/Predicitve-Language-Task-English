@@ -16,7 +16,7 @@ If you just want to run and deploy the experiment:
 5. Build a JATOS package with `npm run jatos <experiment-file>`.
 6. Import the created `.jzip` into JATOS.
 
-## Which experiment files to use
+## Which experiment file to use
 
 Use the module entrypoint `src/experiment-en.ts` directly.
 
@@ -70,8 +70,6 @@ You can start a specific experiment directly:
 ```sh
 npm start experiment-en
 npm start experiment-en-prior
-npm start experiment-de
-npm start experiment-de-prior
 ```
 
 If you want the equivalent explicit `jspsych` call:
@@ -93,15 +91,13 @@ Examples:
 ```sh
 npm run jatos experiment-en
 npm run jatos experiment-en-prior
-npm run jatos experiment-de
-npm run jatos experiment-de-prior
 ```
 
 `npm run jatos` (without an experiment file) builds the base `experiment` entrypoint.
 
 ## Additional HTML modules/assets
 
-The experiment entrypoints include `html` in their `@assets` list. The `html/` directory contains the HTML components required by the English version of the experiment. `html/` must be present when building the `.jzip` file for JATOS. If `html/` does not exist, `jspsych` build/run commands for these module entrypoints fail. Additional HTML files can be added to this directory and then used as separate HTML components in JATOS.    
+The experiment entrypoints include `html` in their `@assets` list. The `html/` directory contains the HTML components required by the English version of the experiment (i.e., clinical questionnaires and administrative components). `html/` must be present when building the `.jzip` file for JATOS. If `html/` does not exist, `jspsych` build/run commands for these module entrypoints fail. Additional HTML files can be added to this directory and then used as separate HTML components in JATOS.    
 # Data Preprocessing and Analysis
 ## Participant CSV export
 
@@ -118,12 +114,21 @@ pip install -r requirements-stt.txt
 Then run the exporter with transcription enabled:
 
 ```sh
-python export_participant_csv.py --results <extracted-results-folder> --transcribe both --stt-backend local-whisper --stt-model small --stt-device cpu
+python preprocessing/export_participant_csv.py --results <extracted-results-folder> --transcribe both --stt-backend local-whisper --stt-model small --stt-device cpu
 ```
 
 Transcription is required for preprocessing, as the subsequent preprocessing steps are performed on the transcribed responses. 
 
 For full options and output details, see `EXPORT_PARTICIPANT_CSV.md`.
+## SPQ data export
+Run `spq_json_to_excel.py` to extract the Schizotypal Personality Questionnaire (SPQ) values from the JATOS results and save them as an Excel file for later merging with the participant data.
+```sh
+python preprocessing/spq_json_to_excel.py 
+```
+
+
+
+
 
 
 
