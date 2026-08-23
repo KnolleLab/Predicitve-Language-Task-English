@@ -1,9 +1,10 @@
-# Predictive Language Task
+# Predictive Language Task - English Version
 
 ## About
 
-This project uses [jsPsych](https://www.jspsych.org/) for browser-based behavioral experiments and is packaged for JATOS via `jspsych-builder`.
+This project implements an English-language version of the [original German predictive language task](https://github.com/doorapr/IDP.git) investigating how semantic context influences the perception of degraded speech. The task is implemented in [jsPsych](https://www.jspsych.org/) for browser-based behavioral experiments and is packaged for JATOS via `jspsych-builder`. Data analysis and computational modelling are performed in [R](https://www.r-project.org). 
 
+# Experiment setup and deployment
 ## Quick start (non-technical)
 
 If you just want to run and deploy the experiment:
@@ -17,13 +18,11 @@ If you just want to run and deploy the experiment:
 
 ## Which experiment files to use
 
-Use this module entrypoints directly:
+Use the module entrypoint `src/experiment-en.ts` directly.
 
-- `src/experiment-en.ts`
+**Note:**`src/experiment.ts` is the shared base implementation and should not be used directly as a study module.
 
-`src/experiment.ts` is the shared base implementation and should not be used directly as a study module.
-
-### Module behavior
+## Module behavior
 
 The module files above enforce these settings in code:
 
@@ -102,33 +101,27 @@ npm run jatos experiment-de-prior
 
 ## Additional HTML modules/assets
 
-The experiment entrypoints include `html` in their `@assets` list.
-
-- Create an `html/` folder at project root.
-- Every file in that folder is included in the generated `.jzip`.
-- In JATOS, you can use these HTML files as additional components in your study.
-- Example: add a participant-ID questionnaire component before the jsPsych timeline by adding an HTML file in `html/` and selecting it as a component HTML file in JATOS.
-
-If `html/` does not exist, `jspsych` build/run commands for these module entrypoints fail.
-
+The experiment entrypoints include `html` in their `@assets` list. The `html/` directory contains the HTML components required by the English version of the experiment. `html/` must be present when building the `.jzip` file for JATOS. If `html/` does not exist, `jspsych` build/run commands for these module entrypoints fail. Additional HTML files can be added to this directory and then used as separate HTML components in JATOS.    
+# Data Preprocessing and Analysis
 ## Participant CSV export
 
 Use `export_participant_csv.py` to create one CSV per participant.
 
 1. In JATOS, download results via **Export as Jatos Results Archive**.
 2. Extract the archive to a folder containing `study_result_*` directories.
-3. Run the exporter from repository root, for example:
-
-```sh
-python export_participant_csv.py --results <extracted-results-folder>
-```
-
-Optional with transcription:
+3. From repository root, install the required transcription dependencies:
 
 ```sh
 pip install -r requirements-stt.txt
+```
+
+Then run the exporter with transcription enabled:
+
+```sh
 python export_participant_csv.py --results <extracted-results-folder> --transcribe both --stt-backend local-whisper --stt-model small --stt-device cpu
 ```
+
+Transcription is required for preprocessing, as the subsequent preprocessing steps are performed on the transcribed responses. 
 
 For full options and output details, see `EXPORT_PARTICIPANT_CSV.md`.
 
