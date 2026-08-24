@@ -1,0 +1,370 @@
+---
+title: "Word Prediction in STPD - Preprocessing"
+author: "Chris Mathys"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+
+### Load the data for MAXI
+
+```{r}
+(data <- readRDS("../data/data_maxi.rds"))
+any(is.na(data$cloze_probability_typed_word))
+data <- data[complete.cases(data$cloze_probability_typed_word), ]
+```
+
+### Preprocess
+
+A tibble for the preprocessed data.
+
+```{r}
+ppdata <- data
+```
+
+
+```{r}
+ppdata <- ppdata %>%
+  mutate(ID = dense_rank(participant_private_id))
+```
+
+
+Rename variables for convenience.
+
+```{r}
+ppdata <- ppdata %>%
+    rename(pt = ID) %>%
+    rename(u = target_word) %>%
+    rename(y = typed_word) %>%
+    rename(cloze_pu = cloze_probability) %>%
+    rename(cloze_py = cloze_probability_typed_word)
+```
+
+Exclude trials where no answer was given.
+
+```{r}
+ppdata <- ppdata %>% filter(word_noword != "noword")
+```
+
+Create an indicator variable for correct answers.
+
+```{r}
+ppdata <- ppdata %>% mutate(correct = as.numeric(word_noword == "correctword"))
+```
+
+Log-transform, centre, and standardize `channels`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(channels = log(channels)) %>%
+    mutate(channels = channels - mean(channels)) %>%
+    mutate(channels = channels/sd(channels))
+```
+
+Centre and standardize `clarity`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(clarity = clarity - mean(clarity)) %>%
+    mutate(clarity = clarity/sd(clarity))
+```
+
+
+Centre and standardize `confidence`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(confidence = confidence - mean(confidence)) %>%
+    mutate(confidence = confidence/sd(confidence))
+```
+
+Increase to a minimum of 0.01, log-transform, centre, and standardize `entropy`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(entropy = ifelse(entropy < 0.01, 0.01, entropy)) %>%
+    mutate(entropy = log(entropy)) %>%
+    mutate(entropy = entropy - mean(entropy)) %>%
+    mutate(entropy = entropy/sd(entropy))
+```
+
+Increase to a minimum of 0.01 `cloze_pu` and `cloze_py`.
+
+```{r}
+ppdata <- ppdata %>%
+     mutate(cloze_pu = ifelse(cloze_pu < 0.01, 0.01, cloze_pu)) %>%
+     mutate(cloze_py = ifelse(cloze_py < 0.01, 0.01, cloze_py))
+```
+
+Centre and standardize `spq_total` in a new variable `spq`.
+-> change for positive traits
+
+### only for model 3 and 5 (only patients) ! Dont run for model 2 and 4
+
+```{r}
+
+ppdata <- ppdata %>%
+    mutate(spq = spq_total - mean(spq_total)) %>%  
+    mutate(spq = spq/sd(spq))
+
+```
+
+
+### Write the preprocessed data out
+
+```{r}
+saveRDS(ppdata, file = "../data/ppdata_maxi.rds")
+
+```
+
+### Load the data for MIDI
+
+```{r}
+(data <- readRDS("../data/data_midi.rds"))
+any(is.na(data$cloze_probability_typed_word))
+data <- data[complete.cases(data$cloze_probability_typed_word), ]
+```
+
+### Preprocess
+
+A tibble for the preprocessed data.
+
+```{r}
+ppdata <- data
+```
+
+
+```{r}
+ppdata <- ppdata %>%
+  mutate(ID = dense_rank(participant_private_id))
+```
+
+
+Rename variables for convenience.
+
+```{r}
+ppdata <- ppdata %>%
+    rename(pt = ID) %>%
+    rename(u = target_word) %>%
+    rename(y = typed_word) %>%
+    rename(cloze_pu = cloze_probability) %>%
+    rename(cloze_py = cloze_probability_typed_word)
+```
+
+Exclude trials where no answer was given.
+
+```{r}
+ppdata <- ppdata %>% filter(word_noword != "noword")
+```
+
+Create an indicator variable for correct answers.
+
+```{r}
+ppdata <- ppdata %>% mutate(correct = as.numeric(word_noword == "correctword"))
+```
+
+Log-transform, centre, and standardize `channels`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(channels = log(channels)) %>%
+    mutate(channels = channels - mean(channels)) %>%
+    mutate(channels = channels/sd(channels))
+```
+
+Centre and standardize `clarity`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(clarity = clarity - mean(clarity)) %>%
+    mutate(clarity = clarity/sd(clarity))
+```
+
+
+Centre and standardize `confidence`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(confidence = confidence - mean(confidence)) %>%
+    mutate(confidence = confidence/sd(confidence))
+```
+
+Increase to a minimum of 0.01, log-transform, centre, and standardize `entropy`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(entropy = ifelse(entropy < 0.01, 0.01, entropy)) %>%
+    mutate(entropy = log(entropy)) %>%
+    mutate(entropy = entropy - mean(entropy)) %>%
+    mutate(entropy = entropy/sd(entropy))
+```
+
+Increase to a minimum of 0.01 `cloze_pu` and `cloze_py`.
+
+```{r}
+ppdata <- ppdata %>%
+     mutate(cloze_pu = ifelse(cloze_pu < 0.01, 0.01, cloze_pu)) %>%
+     mutate(cloze_py = ifelse(cloze_py < 0.01, 0.01, cloze_py))
+```
+
+Centre and standardize `spq_total` in a new variable `spq`.
+-> change for positive traits
+
+### only for model 3 and 5 (only patients) ! Dont run for model 2 and 4
+
+```{r}
+
+ppdata <- ppdata %>%
+    mutate(spq = spq_total - mean(spq_total)) %>%  
+    mutate(spq = spq/sd(spq))
+
+```
+
+
+### Write the preprocessed data out
+
+```{r}
+saveRDS(ppdata, file = "../data/ppdata_midi.rds")
+
+```
+
+
+### Load the data for MINI
+
+```{r}
+(data <- readRDS("../data/data_mini.rds"))
+any(is.na(data$cloze_probability_typed_word))
+data <- data[complete.cases(data$cloze_probability_typed_word), ]
+```
+
+### Preprocess
+
+A tibble for the preprocessed data.
+
+```{r}
+ppdata <- data
+```
+
+
+```{r}
+ppdata <- ppdata %>%
+  mutate(ID = dense_rank(participant_private_id))
+```
+
+
+Rename variables for convenience.
+
+```{r}
+ppdata <- ppdata %>%
+    rename(pt = ID) %>%
+    rename(u = target_word) %>%
+    rename(y = typed_word) %>%
+    rename(cloze_pu = cloze_probability) %>%
+    rename(cloze_py = cloze_probability_typed_word)
+```
+
+Exclude trials where no answer was given.
+
+```{r}
+ppdata <- ppdata %>% filter(word_noword != "noword")
+```
+
+Create an indicator variable for correct answers.
+
+```{r}
+ppdata <- ppdata %>% mutate(correct = as.numeric(word_noword == "correctword"))
+```
+
+Log-transform, centre, and standardize `channels`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(channels = log(channels)) %>%
+    mutate(channels = channels - mean(channels)) %>%
+    mutate(channels = channels/sd(channels))
+```
+
+Centre and standardize `clarity`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(clarity = clarity - mean(clarity)) %>%
+    mutate(clarity = clarity/sd(clarity))
+```
+
+
+Centre and standardize `confidence`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(confidence = confidence - mean(confidence)) %>%
+    mutate(confidence = confidence/sd(confidence))
+```
+
+Increase to a minimum of 0.01, log-transform, centre, and standardize `entropy`.
+
+```{r}
+ppdata <- ppdata %>%
+    mutate(entropy = ifelse(entropy < 0.01, 0.01, entropy)) %>%
+    mutate(entropy = log(entropy)) %>%
+    mutate(entropy = entropy - mean(entropy)) %>%
+    mutate(entropy = entropy/sd(entropy))
+```
+
+Increase to a minimum of 0.01 `cloze_pu` and `cloze_py`.
+
+```{r}
+ppdata <- ppdata %>%
+     mutate(cloze_pu = ifelse(cloze_pu < 0.01, 0.01, cloze_pu)) %>%
+     mutate(cloze_py = ifelse(cloze_py < 0.01, 0.01, cloze_py))
+```
+
+Centre and standardize `spq_total` in a new variable `spq`.
+-> change for positive traits
+
+### only for model 3 and 5 (only patients) ! Dont run for model 2 and 4
+
+```{r}
+
+ppdata <- ppdata %>%
+    mutate(spq = spq_total - mean(spq_total)) %>%  
+    mutate(spq = spq/sd(spq))
+
+```
+
+
+### Write the preprocessed data out
+
+```{r}
+saveRDS(ppdata, file = "../data/ppdata_mini.rds")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

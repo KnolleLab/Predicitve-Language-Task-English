@@ -1,0 +1,287 @@
+---
+title: "Word Prediction in STPD - Model 3 (direct effects)"
+author: "Chris Mathys/Franziska Knolle"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+remove(list = ls())
+#.rs.restartR()
+
+library(tidyverse)
+library(rstan)
+
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+
+```
+
+
+### Load the preprocessed data MAXI
+
+```{r}
+ppdata <- readRDS("../data/ppdata_maxi.rds")
+
+```
+
+### Set up the data structure
+
+How many trials are there?
+
+```{r}
+(I <- ppdata %>% nrow())
+```
+
+There are 4 trial-level linear predictors (`channels`, `entropy`, `cloze_pu`, and `clarity`), plus the intercept.
+
+```{r}
+K <- 5
+channels <- ppdata %>% pull(channels)
+entropy <- ppdata %>% pull(entropy)
+cloze_pu <- ppdata %>% pull(cloze_pu)
+clarity <- ppdata %>% pull(clarity)
+```
+
+There is one participant level linear predictor (`sqp`), plus the intercept.
+
+```{r}
+L <- 2
+spq <- ppdata %>% pull(spq)
+```
+
+The model also needs participant indices `pt`, the cloze probabilities of answers `cloze_py`, and the correctness `correct` of responses.
+
+```{r}
+pt <- ppdata %>% pull(pt) %>% as.numeric()
+cloze_py <- ppdata %>% pull(cloze_py)
+correct <- ppdata %>% pull(correct)
+```
+
+Gather everything in a list and save it.
+
+```{r}
+standata <- list(I = I,
+                 K = K,
+                 L = L,
+                 channels = channels,
+                 entropy = entropy,
+                 cloze_pu = cloze_pu,
+                 clarity = clarity,
+                 spq = spq,
+                 pt = pt,
+                 cloze_py = cloze_py,
+                 correct = correct)
+
+any(is.na(standata$cloze_py))
+```
+
+```{r}
+saveRDS(standata, file = "../data/standata_model_3dir_maxi.rds")
+
+
+```
+
+Fit the model.
+
+```{r}
+
+fit <- stan(file = "../modelling//src/word_prediction_in_stpd_model_3dir.stan",
+            data = standata)
+```
+
+
+```{r}
+print(fit)
+traceplot(fit)
+pairs(fit)
+plot(fit)
+```
+
+Save the fitted model.
+
+```{r}
+saveRDS(fit, file = "../data/stanfit_model_3dir_maxi.rds")
+
+```
+
+### Load the preprocessed data MIDI
+
+```{r}
+ppdata <- readRDS("../data/ppdata_midi.rds")
+
+```
+
+### Set up the data structure
+
+How many trials are there?
+
+```{r}
+(I <- ppdata %>% nrow())
+```
+
+There are 4 trial-level linear predictors (`channels`, `entropy`, `cloze_pu`, and `clarity`), plus the intercept.
+
+```{r}
+K <- 5
+channels <- ppdata %>% pull(channels)
+entropy <- ppdata %>% pull(entropy)
+cloze_pu <- ppdata %>% pull(cloze_pu)
+clarity <- ppdata %>% pull(clarity)
+```
+
+There is one participant level linear predictor (`sqp`), plus the intercept.
+
+```{r}
+L <- 2
+spq <- ppdata %>% pull(spq)
+```
+
+The model also needs participant indices `pt`, the cloze probabilities of answers `cloze_py`, and the correctness `correct` of responses.
+
+```{r}
+pt <- ppdata %>% pull(pt) %>% as.numeric()
+cloze_py <- ppdata %>% pull(cloze_py)
+correct <- ppdata %>% pull(correct)
+```
+
+Gather everything in a list and save it.
+
+```{r}
+standata <- list(I = I,
+                 K = K,
+                 L = L,
+                 channels = channels,
+                 entropy = entropy,
+                 cloze_pu = cloze_pu,
+                 clarity = clarity,
+                 spq = spq,
+                 pt = pt,
+                 cloze_py = cloze_py,
+                 correct = correct)
+
+any(is.na(standata$cloze_py))
+```
+
+```{r}
+saveRDS(standata, file = "../data/standata_model_3dir_midi.rds")
+
+
+```
+
+Fit the model.
+
+```{r}
+
+fit <- stan(file = "../modelling/src/word_prediction_in_stpd_model_3dir.stan",
+            data = standata)
+```
+
+
+```{r}
+print(fit)
+traceplot(fit)
+pairs(fit)
+plot(fit)
+```
+
+Save the fitted model.
+
+```{r}
+saveRDS(fit, file = "../data/stanfit_model_3dir_midi.rds")
+
+```
+
+
+
+### Load the preprocessed data MINI
+
+```{r}
+ppdata <- readRDS("../data/ppdata_mini.rds")
+
+```
+
+### Set up the data structure
+
+How many trials are there?
+
+```{r}
+(I <- ppdata %>% nrow())
+```
+
+There are 4 trial-level linear predictors (`channels`, `entropy`, `cloze_pu`, and `clarity`), plus the intercept.
+
+```{r}
+K <- 5
+channels <- ppdata %>% pull(channels)
+entropy <- ppdata %>% pull(entropy)
+cloze_pu <- ppdata %>% pull(cloze_pu)
+clarity <- ppdata %>% pull(clarity)
+```
+
+There is one participant level linear predictor (`sqp`), plus the intercept.
+
+```{r}
+L <- 2
+spq <- ppdata %>% pull(spq)
+```
+
+The model also needs participant indices `pt`, the cloze probabilities of answers `cloze_py`, and the correctness `correct` of responses.
+
+```{r}
+pt <- ppdata %>% pull(pt) %>% as.numeric()
+cloze_py <- ppdata %>% pull(cloze_py)
+correct <- ppdata %>% pull(correct)
+```
+
+Gather everything in a list and save it.
+
+```{r}
+standata <- list(I = I,
+                 K = K,
+                 L = L,
+                 channels = channels,
+                 entropy = entropy,
+                 cloze_pu = cloze_pu,
+                 clarity = clarity,
+                 spq = spq,
+                 pt = pt,
+                 cloze_py = cloze_py,
+                 correct = correct)
+
+any(is.na(standata$cloze_py))
+```
+
+```{r}
+saveRDS(standata, file = "../data/standata_model_3dir_mini.rds")
+
+
+```
+
+Fit the model.
+
+```{r}
+
+fit <- stan(file = "../modelling/src/word_prediction_in_stpd_model_3dir.stan",
+            data = standata)
+```
+
+
+```{r}
+print(fit)
+traceplot(fit)
+pairs(fit)
+plot(fit)
+```
+
+Save the fitted model.
+
+```{r}
+saveRDS(fit, file = "../data/stanfit_model_3dir_mini.rds")
+
+```
+

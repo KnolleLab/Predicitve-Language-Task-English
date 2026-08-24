@@ -1,0 +1,90 @@
+---
+title: "Word Prediction in STPD - Experiment and Data"
+author: "Chris Mathys"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+library(corrr)
+library(bayesplot)
+library(here)
+```
+
+## Experiment
+
+The setup is as follows:
+
+1.  prior+degraded target word
+2.  clarity rating (1-100, (RT possible))
+3.  Type the word you heard + confidence rating for answer giving,
+
+please see the PPT attached.
+
+The channel numbers are 1,3,6,12. (50 sentences per channel level) -\> 200 trials in total.
+
+The prior is continuous in entropy from very low (completely predictable) to very high (completely unpredictable)
+
+The target words' cloze probability (expectancy) ranges from 0 (not expected) to 1 (very expected).
+
+## Data
+
+### Read them in
+
+```{r}
+(data_maxi <- read.csv("/Users/polina/Documents/Documents\ -\ Polina’s\ MacBook\ Air/KnolleLab/Predictive_Language_Task/IDP-main/preprocessing/PlangEnglish_data.csv") %>%
+  #".../preprocessing/PlangEnglish_data.csv") #your path to the preprocessing folder 
+    mutate(trial_number = as_factor(trial_number)) %>%
+    mutate(participant_private_id = as_factor(participant_private_id)) %>%
+    mutate(condition = as_factor(condition)) %>%
+    mutate(word_noword = as_factor(word_noword_jw)))
+
+```
+
+### Write them out
+
+```{r}
+saveRDS(data_maxi, file = "../data/data_maxi.rds")
+
+mini<-data_maxi%>%filter(str_detect(block, "mini"))
+midi<-data_maxi%>%filter(str_detect(block, "mini|midi"))
+
+saveRDS(midi, file = "../data/data_midi.rds")
+saveRDS(mini, file = "../data/data_mini.rds")
+```
+
+
+### Variable overview
+
+We have three kinds of variables:
+
+*Outcomes (dependent variables)* 
+
+-   `typed_word`
+-   `clarity`
+-   `confidence`
+-   `cloze_probability_typed_word`
+-   `word_noword` (Jaro-Winkler classification)
+
+*Trial-level predictors*
+
+-   `trial_number`
+-   `channels`
+-   `entropy`
+-   `condition`
+-   `cloze_probability`
+-   `target_word`
+
+*Participant-level predictors (variables varying between predictors)*
+
+-   `participant_private_id`
+-   `spq_{total,aeb,sanh,pi,sanx,ecc,ds}`
+
+### Remarks
+-   `condition` is defined by binning `entropy`
+
